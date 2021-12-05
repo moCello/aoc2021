@@ -47,62 +47,41 @@ fn convert_to_base_10(base2: &Vec<i32>) -> u32 {
     base10
 }
 
-fn make_new_selector(
-    report: &Vec<Vec<i32>>,
-    selector: &Vec<usize>,
-    new_selector: &mut Vec<usize>,
+fn life_support_rating(
+    filter: Vec<&Vec<i32>>,
     index: usize,
-    bit: i32,
-) {
-    if index > 11 {
-        panic!("buffer overflow when making new selector");
-    }
-
-    for row in selector.iter() {
-        if report[*row][index] == bit {
-            new_selector.push(*row);
-        }
-    }
-}
-
-fn life_support_rating<'a>(
-    report: &'a Vec<Vec<i32>>,
-    selector: Vec<usize>,
-    index: usize,
-    most_common: bool,
-) -> &'a Vec<i32> {
-    let len = selector.len();
+    select_most_common: bool,
+) -> &Vec<i32> {
+    let len = filter.len();
 
     if len == 1 {
-        return &report[selector[0]];
+        return filter[0];
     } else {
-        let mut new_selector: Vec<usize> = Vec::new();
-        let mut count = 0;
+        if index > 11 {
+            panic!("index overflow....");
+        }
+        let mut filter_0: Vec<&Vec<i32>> = Vec::new();
+        let mut filter_1: Vec<&Vec<i32>> = Vec::new();
 
-        for row in selector.iter() {
-            count += report[*row][index];
+        for row in filter.iter() {
+            match row[index] {
+                0 => filter_0.push(row),
+                _ => filter_1.push(row),
+            };
         }
 
-        let (most_common_bit, least_common_bit) = {
-            if count * 2 >= len as i32 {
-                (1, 0)
+        let (most_common, least_common) = {
+            if filter_1.len() >= filter_0.len() {
+                (filter_1, filter_0)
             } else {
-                (0, 1)
+                (filter_0, filter_1)
             }
         };
 
-        match most_common {
-            true => make_new_selector(report, &selector, &mut new_selector, index, most_common_bit),
-            false => make_new_selector(
-                report,
-                &selector,
-                &mut new_selector,
-                index,
-                least_common_bit,
-            ),
-        };
-
-        life_support_rating(report, new_selector, index + 1, most_common)
+        match select_most_common {
+            true => life_support_rating(most_common, index + 1, select_most_common),
+            false => life_support_rating(least_common, index + 1, select_most_common),
+        }
     }
 }
 
@@ -119,12 +98,12 @@ fn main() {
         gamma * epsilon
     );
 
-    let mut selector: Vec<usize> = Vec::new();
+    let mut filter: Vec<&Vec<i32>> = Vec::new();
     for i in 0..1000 {
-        selector.push(i);
+        filter.push(&report[i]);
     }
 
-    let o2 = convert_to_base_10(life_support_rating(&report, selector.clone(), 0, true));
-    let co2 = convert_to_base_10(life_support_rating(&report, selector, 0, false));
+    let o2 = convert_to_base_10(life_support_rating(filter.clone(), 0, true));
+    let co2 = convert_to_base_10(life_support_rating(filter, 0, false));
     println!("o2 = {}, co2 = {}, product = {}", o2, co2, o2 * co2);
 }
